@@ -1,0 +1,97 @@
+int pinA 6
+int pinB 10
+int pinLDR 8
+
+int DIA   LOW
+int NOITE HIGH
+
+int luzTroca 400
+
+int esperaSombra 1000 //Espera só 1 Segundo
+int de gravação
+
+int tempoAbre  2000 // apenas 2 segundos para teste da cortina
+int tempoFecha 2000 // apenas 2 segundos para teste
+
+//boolean estadoSensorAnt = DIA; // Ligando de dia
+boolean estadoSensorAnt = NOITE; // Ligando de noite
+
+bool abre  = false;
+bool fecha = false;
+
+void setup(){
+  Serial.begin(9600);
+  
+  pinMode(pinA, OUTPUT);
+  pinMode(pinB, OUTPUT);
+  pinMode(pinLDR, INPUT);
+}
+
+void loop(){
+  boolean estadoSensor = digitalRead(pinLDR);
+  // Módulo LDR digital
+
+  if(Serial.available()){ 
+    // testar o motor via Serial letra A (maiúscula) abre,
+    //e letra F fecha
+    char lido = Serial.read();  
+    if(lido == 'A') abre = true;
+    if(lido == 'F') fecha = true;
+  }
+  
+  Serial.print("LDR: ");
+  if(estadoSensor == DIA) Serial.println("DIA"); 
+  else Serial.println("NOITE");
+  // Debug, ver o nível do sensor  
+
+  if( estadoSensor == DIA && estadoSensorAnt == NOITE){
+    unsigned long controleSombra = millis();
+    
+    while( millis() - controleSombra < esperaSombra){
+      if(digitalRead(pinLDR) == NOITE) break;
+      delay(100);
+    }
+    
+    if(digitalRead(pinLDR) == DIA) abre = true;
+    //Módulo LDR digital
+    else estadoSensor = NOITE;
+  }
+  
+  if( estadoSensor == NOITE && estadoSensorAnt == DIA){
+    unsigned long controleSombra = millis();
+    
+    while( millis() - controleSombra < esperaSombra){
+      if(digitalRead(pinLDR) == DIA) break;
+      delay(100);
+    }
+    
+    if(digitalRead(pinLDR) == NOITE) fecha = true; 
+    //Módulo LDR digital
+    else estadoSensor = DIA;
+  }
+  
+  if(abre){
+    digitalWrite(pinA, HIGH);
+    digitalWrite(pinB, LOW);
+    delay(tempoAbre);
+    digitalWrite(pinA, LOW);
+    digitalWrite(pinB, LOW);
+    
+    abre = false;
+  }
+  
+  if(fecha){
+    digitalWrite(pinA, LOW);
+    digitalWrite(pinB, HIGH);
+    delay(tempoFecha);
+    digitalWrite(pinA, LOW);
+    digitalWrite(pinB, LOW);
+    
+    fecha = false;
+  }
+  
+  estadoSensorAnt = estadoSensor;
+  delay(100);
+}
+
+
